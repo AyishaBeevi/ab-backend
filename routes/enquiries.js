@@ -43,12 +43,17 @@ const email = enquiryEmailTemplate({
   preferredContact,
 });
 
-await transporter.sendMail({
-  from: process.env.MAIL_FROM,
-  to: recipients,
-  subject: email.subject,
-  html: email.html,
-});
+try {
+  await transporter.sendMail({
+    from: process.env.MAIL_FROM,
+    to: recipients,
+    subject: email.subject,
+    html: email.html,
+  });
+} catch (mailErr) {
+  console.error("Email failed:", mailErr.message);
+}
+
 
     /* ---------------- NOTIFY (EMAIL) ----------------
        Here you trigger Nodemailer to:
