@@ -17,48 +17,90 @@ router.post("/", async (req, res) => {
       return res.status(404).json({ message: "Property not found" });
     }
 
-    const enquiry = await Enquiry.create({
-      property: property._id,
-      propertyTitle: property.title,
-      agent: property.agent?._id,
-      name,
-      contact,
-      message,
-      preferredContact,
-    });
+//     const enquiry = await Enquiry.create({
+//       property: property._id,
+//       propertyTitle: property.title,
+//       agent: property.agent?._id,
+//       name,
+//       contact,
+//       message,
+//       preferredContact,
+//     });
 
-    // ---------------- EMAIL NOTIFICATION ----------------
-const admins = await User.find({ role: "admin" }).select("email");
-const recipients = [
-  property.agent?.email,
-  ...admins.map((a) => a.email),
-].filter(Boolean);
+//     // ---------------- EMAIL NOTIFICATION ----------------
+// const admins = await User.find({ role: "admin" }).select("email");
+// const recipients = [
+//   property.agent?.email,
+//   ...admins.map((a) => a.email),
+// ].filter(Boolean);
 
-const email = enquiryEmailTemplate({
+// const email = enquiryEmailTemplate({
+//   propertyTitle: property.title,
+//   propertySlug: property.slug,
+//   name,
+//   contact,
+//   message,
+//   preferredContact,
+// });
+
+// try {
+//   await transporter.sendMail({
+//     from: process.env.MAIL_FROM,
+//     to: recipients,
+//     subject: email.subject,
+//     html: email.html,
+//   });
+// } catch (mailErr) {
+//   console.error("Email failed:", mailErr.message);
+// }
+
+// CREATE enquiry
+const enquiry = await Enquiry.create({
+  property: property._id,
   propertyTitle: property.title,
-  propertySlug: property.slug,
+  agent: property.agent?._id,
   name,
   contact,
   message,
   preferredContact,
 });
 
-try {
-  await transporter.sendMail({
-    from: process.env.MAIL_FROM,
-    to: recipients,
-    subject: email.subject,
-    html: email.html,
-  });
-} catch (mailErr) {
-  console.error("Email failed:", mailErr.message);
-}
+// ✅ RESPOND IMMEDIATELY
+res.status(201).json({ success: true, enquiry });
+
+// 🔁 SEND EMAIL IN BACKGROUND
+(async () => {
+  try {
+    const admins = await User.find({ role: "admin" }).select("email");
+
+    const recipients = [
+      property.agent?.email,
+      ...admins.map((a) => a.email),
+    ].filter(Boolean);
+
+    const email = enquiryEmailTemplate({
+      propertyTitle: property.title,
+      propertySlug: property.slug,
+      name,
+      contact,
+      message,
+      preferredContact,
+    });
+
+    await transporter.sendMail({
+      from: process.env.MAIL_FROM,
+      to: recipients,
+      subject: email.subject,
+      html: email.html,
+    });
+  } catch (err) {
+    console.error("Email failed:", err.message);
+  }
+})();
 
 
-    /* ---------------- NOTIFY (EMAIL) ----------------
-       Here you trigger Nodemailer to:
-       - property.agent.email
-       - all admins
+
+    /* --- NOTIFY (EMAIL) -
     */
 
     res.status(201).json({ success: true, enquiry });
@@ -96,6 +138,7 @@ router.get(
     try {
       const enquiries = await Enquiry.find()
         .populate("agent", "name email")
+        .populate("property", "title slug")
         .sort({ createdAt: -1 });
 
       res.json(enquiries);
