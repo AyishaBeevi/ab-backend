@@ -60,14 +60,6 @@ pass: testagent1234`
 Admin credentials can be shared upon request
 ---
 
-## 📌 Why This Matters to UAE Employers
-
-* Mirrors real estate agency workflows
-* Shows deployment & security awareness
-* Demonstrates ownership beyond tutorials
-* Ready to extend with maps, payments, CRM features
-
----
 
 **Author:** Ayisha Beevi — Full-Stack MERN Developer
 **Availability:** Open to UAE roles (Junior / Associate Full-Stack)
